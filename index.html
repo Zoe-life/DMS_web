@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Monitoring System - Dashboard</title>
+    <!-- Tailwind CSS CDN for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Poppins Font - Adopted from infographic.html -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Vue.js 3 CDN for the reactive frontend -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom CSS overriding/extending Tailwind for infographic.html aesthetic */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6; /* Light gray background, similar to infographic's container bg */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        #app {
+            max-width: 96rem; /* xl equivalent from Tailwind, or adjust as needed */
+            width: 100%;
+            background-color: #ffffff; /* White background for the main dashboard content */
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            padding: 1.5rem;
+            color: #003B46; /* Main text color from infographic */
+        }
+
+        /* Responsive padding for smaller screens */
+        @media (min-width: 640px) { /* sm breakpoint */
+            #app {
+                padding: 2rem;
+            }
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            #app {
+                padding: 2.5rem;
+            }
+        }
+        @media (min-width: 1024px) { /* lg breakpoint */
+            #app {
+                padding: 3rem;
+            }
+        }
+
+        /* Color palette from infographic.html */
+        :root {
+            --color-primary: #07575B;
+            --color-secondary: #66A5AD;
+            --color-accent: #C4DFE6;
+            --color-dark: #003B46;
+            --color-light: #E4F1F3;
+            --color-highlight: #FFA630;
+            --color-text-gray: #6b7280; /* Equivalent of gray-600 in Tailwind */
+        }
+
+        /* Main Heading Styles */
+        .h1-main {
+            font-size: 2.25rem; /* text-4xl */
+            line-height: 2.5rem; /* leading-9 */
+            font-weight: 700; /* font-bold */
+            color: var(--color-dark); /* #003B46 */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .h1-main {
+                font-size: 3rem; /* md:text-5xl */
+                line-height: 1; /* leading-none */
+            }
+        }
+
+        /* Section Heading Styles */
+        .h2-section {
+            font-size: 1.875rem; /* text-3xl */
+            line-height: 2.25rem; /* leading-8 */
+            font-weight: 700; /* font-bold */
+            color: var(--color-dark); /* #003B46 */
+        }
+
+        /* Sub-heading styles for cards */
+        .h3-card {
+            font-size: 1.5rem; /* text-2xl */
+            line-height: 2rem; /* leading-8 */
+            font-weight: 700; /* font-bold */
+            color: var(--color-dark); /* #003B46 */
+        }
+
+        /* Generic card/section styling from infographic.html */
+        .content-card {
+            @apply bg-white rounded-lg shadow-lg p-6 md:p-8;
+        }
+
+        /* Tab Navigation Styling (mimicking infographic sections) */
+        .tab-button {
+            @apply px-5 py-3 text-lg font-semibold rounded-lg relative overflow-hidden;
+            color: var(--color-dark); /* Dark text for inactive tabs */
+            background-color: transparent; /* Changed to transparent for no hue */
+            border: 1px solid transparent; /* No visible border normally */
+            transition: color 0.3s ease-out, background-color 0.3s ease-out, border-color 0.3s ease-out;
+        }
+        .tab-button::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px; /* Green line height */
+            background-color: var(--color-primary); /* Green line color */
+            transform: scaleX(0); /* Start off-screen to the left (scale to 0 width) */
+            transition: transform 0.3s ease-out; /* Smooth transition */
+            transform-origin: bottom right; /* Animate from right to left */
+        }
+        /* Hover effect for inactive tabs: show underline and change text color */
+        .tab-button:not(.active):hover {
+            color: var(--color-primary); /* Change text color on hover */
+            background-color: var(--color-light); /* Subtle background on hover for inactive tabs */
+            border-color: var(--color-light); /* Border color matching hover background */
+        }
+        .tab-button:not(.active):hover::after {
+            transform: scaleX(1); /* Show line on hover */
+            transform-origin: bottom left; /* Animate from left to right on hover */
+        }
+        /* Active tab styling: text color primary, background transparent, underline always visible */
+        .tab-button.active {
+            color: var(--color-primary); /* Active tab text color */
+            background-color: transparent; /* No background fill for active tab */
+            box-shadow: none; /* Remove previous shadow */
+            border-color: var(--color-primary); /* Subtle border matching text/line color */
+        }
+        .tab-button.active::after {
+            transform: scaleX(1); /* Green line visible for active tab */
+            transform-origin: bottom left; /* Ensure it's fully extended */
+        }
+
+
+        /* Metric Cards Styling (Enhanced from previous, using infographic colors) */
+        .metric-card {
+            @apply bg-white p-6 rounded-lg shadow-md flex flex-col justify-between border-b-4; /* Add a bottom border for color coding */
+            border-color: var(--color-secondary); /* Default border color */
+            transition: all 0.3s ease-in-out;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px); /* Lift effect on hover */
+            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
+        }
+        .metric-card.bg-gradient-to-br { /* Specific style for Driver Index */
+            border-color: transparent !important; /* No border as gradient covers it */
+        }
+
+        .metric-value {
+            @apply text-5xl font-extrabold mt-3 mb-1; /* Larger, bolder value */
+            color: var(--color-dark); /* Default metric value color */
+        }
+        .metric-card.text-white .metric-value {
+            color: white; /* For driver index card */
+        }
+        .metric-label {
+            @apply text-gray-500 text-sm;
+            color: var(--color-text-gray); /* Match infographic gray */
+        }
+        .metric-card.text-white .metric-label {
+            color: var(--color-accent); /* Lighter label for driver index card */
+        }
+
+        /* Chart container to manage aspect ratio and height */
+        .chart-container {
+            position: relative;
+            height: 350px; /* Consistent height with infographic charts */
+            width: 100%;
+            max-width: 600px; /* Optional: Keep charts from getting too wide, or remove */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* Custom scrollbar for better UX if content overflows */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-light);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-secondary);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+
+        /* Styling for the SWOT-like grid, adapted to generic lists */
+        .list-card {
+            @apply p-4 rounded-lg;
+        }
+        .list-card h4 {
+            @apply font-bold text-lg mb-2;
+            color: var(--color-dark); /* General heading for lists */
+        }
+        .list-card ul {
+            @apply list-disc list-inside space-y-1;
+            color: var(--color-text-gray);
+        }
+        /* Enhanced .data-point-item for logs */
+        .data-point-item {
+            @apply p-4 rounded-md flex justify-between items-center; /* Increased padding, flex layout */
+            border-top: 1px solid var(--color-light); /* Divider line between items */
+            transition: background-color 0.2s ease-in-out;
+        }
+        .data-point-item:first-child {
+            border-top: none; /* No top border for the very first item in a list */
+        }
+        .data-point-item:hover {
+            background-color: var(--color-light); /* Subtle hover effect */
+        }
+        .data-point-item p {
+            @apply text-base; /* Standard text size */
+        }
+        .data-point-item .label-text { /* For static labels */
+            color: var(--color-dark);
+        }
+        .data-point-item .value-text { /* For dynamic values */
+            @apply font-semibold;
+            color: var(--color-primary); /* Consistent value color */
+        }
+        .data-point-item .value-text.red {
+            color: #dc2626; /* Tailwind red-600 */
+        }
+        .data-point-item .value-text.green {
+            color: #16a34a; /* Tailwind green-600 */
+        }
+        .data-point-item .text-sm { /* For smaller details like timestamp */
+            color: var(--color-text-gray);
+        }
+
+        /* Responsive height for log containers */
+        .log-container {
+            max-height: 400px; /* Default max-height for larger screens */
+            overflow-y: auto;
+            border: 1px solid var(--color-light); /* Added light border for visual grouping */
+            border-radius: 0.5rem; /* Rounded corners for the container */
+            padding-right: 0.5rem; /* Space for scrollbar */
+        }
+
+        /* THIS IS THE KEY FOR RESPONSIVE LOG HEIGHTS */
+        @media (max-width: 768px) { /* Adjust for smaller screens like tablets */
+            .log-container {
+                max-height: 50vh; /* Use viewport height for better responsiveness on tablets */
+            }
+        }
+        @media (max-width: 480px) { /* Adjust for very small screens like phones */
+            .log-container {
+                max-height: 40vh; /* Even less height on very small screens */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="w-full max-w-7xl content-card">
+        <header class="text-center mb-12 pb-4">
+            <h1 class="h1-main mb-2">Driver Behavior Monitoring Dashboard</h1>
+            <p class="text-lg md:text-xl text-gray-600">Real-time insights from external vehicle observation</p>
+            <p class="text-xs text-gray-400 mt-2">User ID: {{ userId }}</p>
+        </header>
+
+        <!-- Tab Navigation (acting as page navigation) -->
+        <nav class="flex flex-wrap justify-center gap-4 mb-12">
+            <button v-for="tab in tabs" :key="tab.id"
+                    :class="['tab-button', { 'active': activeTab === tab.id }]"
+                    @click="switchTab(tab.id)">
+                {{ tab.name }}
+            </button>
+        </nav>
+
+        <!-- Main Content Area - Each section now functions as a distinct 'page' -->
+        <main class="space-y-12">
+
+            <!-- Overview Tab Content (Home Page Equivalent) -->
+            <section v-if="activeTab === 'overview'" class="space-y-10">
+                <div class="text-center mb-8">
+                    <h2 class="h2-section mb-4">System Overview & Key Performance Indicators</h2>
+                    <p class="text-base text-gray-600 max-w-2xl mx-auto">
+                        This section provides a comprehensive summary of the most critical real-time metrics and the overall driver behavior index. It offers an immediate, high-level snapshot of the vehicle's operational safety and adherence to ideal driving parameters, powered by advanced computer vision models.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Driver Index Card -->
+                    <div class="metric-card bg-gradient-to-br from-[--color-primary] to-[--color-dark] text-white rounded-xl shadow-xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-white">Driver Behavior Index</h3>
+                            <svg class="w-10 h-10 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l-2 2M9 19H7m2 0h2.906a2.003 2.003 0 001.536-3.284l-.862-1.293a2 2 0 00-.73-2.072L9 8m2.906 0a2.003 2.003 0 001.536-3.284l-.862-1.293a2 2 0 00-.73-2.072L9 3m0 0H7m2 0V3m0 0L7 5m2-2l-2 2"></path></svg>
+                        </div>
+                        <p class="metric-value text-white">{{ driverData.latest.driverIndex }}</p>
+                        <p class="metric-label text-[--color-accent]">Overall score (100 = optimal behavior)</p>
+                    </div>
+
+                    <!-- Latest Speed Card -->
+                    <div class="metric-card border-b-4 border-[--color-highlight]">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Current Speed</h3>
+                            <svg class="w-10 h-10 text-[--color-highlight] opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <p class="metric-value text-[--color-highlight]">{{ driverData.latest.speed }} km/h</p>
+                        <p class="metric-label">Latest recorded speed from model</p>
+                    </div>
+
+                    <!-- Objects Detected Card -->
+                    <div class="metric-card border-b-4 border-[--color-secondary]">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Objects Detected</h3>
+                            <svg class="w-10 h-10 text-[--color-secondary] opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <p class="metric-value text-[--color-secondary]">{{ driverData.latest.objectsDetected }}</p>
+                        <p class="metric-label">Vehicles, pedestrians, etc. (real-time)</p>
+                    </div>
+
+                    <!-- Following Distance Card -->
+                    <div class="metric-card border-b-4 border-[--color-accent]">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Following Distance</h3>
+                            <svg class="w-10 h-10 text-[--color-accent] opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <p class="metric-value text-[--color-accent]">{{ driverData.latest.followingDistance }} meters</p>
+                        <p class="metric-label">Distance to leading object</p>
+                    </div>
+
+                    <!-- Lane Deviation Status Card -->
+                    <div :class="['metric-card', driverData.latest.laneDeviation ? 'bg-red-100 border-red-500' : 'bg-green-100 border-green-500']">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Lane Deviation Status</h3>
+                            <svg :class="['w-10 h-10 opacity-80', driverData.latest.laneDeviation ? 'text-red-500' : 'text-green-500']" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        </div>
+                        <p :class="['metric-value', driverData.latest.laneDeviation ? 'text-red-700' : 'text-green-700']">
+                            {{ driverData.latest.laneDeviation ? 'Detected' : 'None' }}
+                        </p>
+                        <p class="metric-label">Indicates a recent uncommanded lane departure</p>
+                    </div>
+
+                    <!-- Last Updated Card -->
+                    <div class="metric-card border-b-4 border-gray-400">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Last Updated</h3>
+                            <svg class="w-10 h-10 text-gray-500 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <p class="metric-value text-gray-700 text-base">{{ driverData.latest.timestamp }}</p>
+                        <p class="metric-label">Real-time data update received</p>
+                    </div>
+                </div>
+
+                <!-- Driver Index Chart -->
+                <div class="content-card mt-10">
+                    <h2 class="h3-card mb-6">Driver Behavior Index Trend</h2>
+                    <p class="text-base text-gray-600 mb-4">
+                        This chart visualizes the driver's overall performance score over the most recent data entries.
+                        A higher score indicates safer driving behavior, reflecting better adherence to road rules and smoother vehicle control.
+                        This index is calculated based on various factors including speed, acceleration, braking, and lane-keeping.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="driverIndexChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Simulated Data Feed Section -->
+                <div class="content-card mt-10">
+                    <h2 class="h3-card mb-6">Simulated Real-time Data Feed</h2>
+                    <p class="text-base text-gray-600 mb-4">
+                        Below is a live feed of the individual data points being received and processed by the system.
+                        This demonstrates the continuous nature of the monitoring and the granularity of the data captured.
+                        Hover over an entry for a subtle highlight.
+                    </p>
+                    <div class="log-container">
+                        <div v-for="(ts, index) in driverData.history.timestamps.slice().reverse()" :key="index" class="data-point-item" :class="{'first-item-no-border': index === 0}">
+                            <div class="flex-grow">
+                                <p class="label-text">Entry {{ driverData.history.timestamps.length - index }}: <span class="text-gray-700">{{ new Date(ts).toLocaleString() }}</span></p>
+                                <p class="text-sm label-text">Speed: <span class="value-text">{{ driverData.history.speed[driverData.history.timestamps.length - 1 - index]?.toFixed(1) || 'N/A' }} km/h</span></p>
+                                <p class="text-sm label-text">Acceleration: <span class="value-text">{{ driverData.history.acceleration[driverData.history.timestamps.length - 1 - index]?.toFixed(2) || 'N/A' }} G</span></p>
+                                <p class="text-sm label-text">Braking: <span class="value-text">{{ driverData.history.braking[driverData.history.timestamps.length - 1 - index]?.toFixed(2) || 'N/A' }} G</span></p>
+                                <p class="text-sm label-text">Lane Deviation: <span :class="['value-text', driverData.history.laneDeviation[driverData.history.timestamps.length - 1 - index] ? 'red' : 'green']">{{ driverData.history.laneDeviation[driverData.history.timestamps.length - 1 - index] ? 'Detected' : 'None' }}</span></p>
+                                <p class="text-sm label-text">Driver Index: <span class="value-text">{{ driverData.history.driverIndex[driverData.history.timestamps.length - 1 - index]?.toFixed(0) || 'N/A' }}</span></p>
+                            </div>
+                        </div>
+                        <p v-if="driverData.history.timestamps.length === 0" class="text-gray-500 italic p-4 text-center">No data points received yet. Waiting for simulation...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Speed Analysis Tab Content (Speed Page Equivalent) -->
+            <section v-if="activeTab === 'speed'" class="space-y-10">
+                 <div class="text-center mb-8">
+                    <h2 class="h2-section mb-4">In-Depth Speed Analysis</h2>
+                    <p class="text-base text-gray-600 max-w-2xl mx-auto">
+                        This section provides detailed insights into vehicle speed patterns, including average, maximum, and historical trends. Understanding speed metrics is crucial for identifying instances of speeding, inconsistent velocity, or overall smooth driving, contributing significantly to road safety.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="metric-card border-b-4 border-[--color-highlight]">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Average Speed (Recent)</h3>
+                            <svg class="w-10 h-10 text-[--color-highlight] opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 1m3-1v7a2 2 0 002 2h4a2 2 0 002-2V6l3-1M9 10a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2H9a2 2 0 01-2-2v-2zm-3 2h3m-3 4h3m-3 4h3"></path></svg>
+                        </div>
+                        <p class="metric-value text-[--color-highlight]">{{ (driverData.history.speed.length > 0 ? (driverData.history.speed.reduce((a, b) => a + b, 0) / driverData.history.speed.length).toFixed(2) : 'N/A') }} km/h</p>
+                        <p class="metric-label">Calculated average of collected speeds</p>
+                    </div>
+                    <div class="metric-card border-b-4 border-red-500">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Max Speed (Recent)</h3>
+                            <svg class="w-10 h-10 text-red-500 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M14 10a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <p class="metric-value text-red-700">{{ (driverData.history.speed.length > 0 ? Math.max(...driverData.history.speed) : 'N/A') }} km/h</p>
+                        <p class="metric-label">Highest recorded speed in history</p>
+                    </div>
+                </div>
+
+                <div class="content-card mt-10">
+                    <h2 class="h3-card mb-6">Speed Trend Over Time</h2>
+                    <p class="text-base text-gray-600 mb-4">
+                        This line graph illustrates how the vehicle's speed has varied over the recent monitoring period.
+                        Observing these trends can highlight patterns such as frequent rapid acceleration or deceleration,
+                        which could indicate aggressive driving or challenging road conditions.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="speedChartCanvas"></canvas>
+                    </div>
+                </div>
+                <div class="content-card mt-10">
+                    <h2 class="h3-card mb-6">Recent Speed Readings Log</h2>
+                    <p class="text-base text-gray-600 mb-4">
+                        A chronological log of individual speed measurements captured by the system,
+                        providing granular detail on the vehicle's velocity profile.
+                    </p>
+                    <div class="log-container">
+                         <div v-for="(speed, index) in driverData.history.speed.slice().reverse()" :key="index" class="data-point-item" :class="{'first-item-no-border': index === 0}">
+                            <p class="label-text">
+                                Entry {{ driverData.history.speed.length - index }}:
+                                <span class="text-gray-700">{{ driverData.history.timestamps?.[driverData.history.timestamps.length - 1 - index] ? new Date(driverData.history.timestamps[driverData.history.timestamps.length - 1 - index]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A' }}</span>
+                            </p>
+                            <p class="value-text">{{ speed.toFixed(1) }} km/h</p>
+                        </div>
+                        <p v-if="driverData.history.speed.length === 0" class="text-gray-500 italic p-4 text-center">No speed data available.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Acceleration & Braking Tab Content (Acceleration Page Equivalent) -->
+            <section v-if="activeTab === 'acceleration'" class="space-y-10">
+                <div class="text-center mb-8">
+                    <h2 class="h2-section mb-4">Acceleration and Braking Analysis</h2>
+                    <p class="text-base text-gray-600 max-w-2xl mx-auto">
+                        This section focuses on the longitudinal forces experienced by the vehicle during acceleration and braking.
+                        High G-forces in these maneuvers can indicate aggressive driving, sudden stops, or rapid starts,
+                        all of which are critical indicators for safety and fuel efficiency.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="metric-card border-b-4 border-[--color-highlight]">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Latest Acceleration</h3>
+                            <svg class="w-10 h-10 text-[--color-highlight] opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l2-2m-2 15V6M9 19H7m2 0h2.906a2.003 2.003 0 001.536-3.284l-.862-1.293a2 2 0 00-.73-2.072L9 8m2.906 0a2.003 2.003 0 001.536-3.284l-.862-1.293a2 2 0 00-.73-2.072L9 3m0 0H7m2 0V3"></path></svg>
+                        </div>
+                        <p class="metric-value text-[--color-highlight]">{{ driverData.latest.acceleration.toFixed(2) }} G</p>
+                        <p class="metric-label">Current acceleration value in G-force</p>
+                    </div>
+                    <div class="metric-card border-b-4 border-red-500">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-2xl font-semibold text-[--color-dark]">Latest Braking</h3>
+                            <svg class="w-10 h-10 text-red-500 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <p class="metric-value text-red-700">{{ driverData.latest.braking.toFixed(2) }} G</p>
+                        <p class="metric-label">Current braking value in G-force</p>
+                    </div>
+                </div>
+                <div class="content-card mt-10">
+                    <h2 class="h3-card mb-6">Acceleration & Braking History Log</h2>
+                    <p class="text-base text-gray-600 mb-4">
+                        A detailed list of recent acceleration and braking events, providing granular context to the calculated G-forces over time. This helps in pinpointing instances of harsh maneuvers.
+                    </p>
+                    <div class="log-container">
+                        <div v-for="(accel, index) in driverData.history.acceleration.slice().reverse()" :key="index" class="data-point-item" :class="{'first-item-no-border': index === 0}">
+                            <p class="label-text">
+                                Entry {{ driverData.history.acceleration.length - index }}:
+                                <span class="text-gray-700">{{ driverData.history.timestamps?.[driverData.history.timestamps.length - 1 - index] ? new Date(driverData.history.timestamps[driverData.history.timestamps.length - 1 - index]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A' }}</span>
+                            </p>
+                            <div>
+                                <p class="text-sm label-text">Acc: <span class="value-text">{{ accel.toFixed(2) }} G</span></p>
+                                <p class="text-sm label-text">Brak: <span class="value-text red">{{ driverData.history.braking[driverData.history.acceleration.length - 1 - index]?.toFixed(2) || 'N/A' }} G</span></p>
+                            </div>
+                        </div>
+                        <p v-if="driverData.history.acceleration.length === 0" class="text-gray-500 italic p-4 text-center">No data available for acceleration and braking.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Lane Behavior Tab Content (Lane Behavior Page Equivalent) -->
+            <section v-if="activeTab === 'lane_behavior'" class="space-y-10">
+                 <div class="text-center mb-8">
+                    <h2 class="h2-section mb-4">Lane Behavior Analysis</h2>
+                    <p class="text-base text-gray-600 max-w-2xl mx-auto">
+                        This critical section details the vehicle's adherence to lane markings, leveraging advanced road segmentation to identify deviations. Consistent lane keeping indicates focused driving, while frequent deviations can highlight issues with attentiveness, road conditions, or potential system warnings.
+                    </p>
+                </div>
+                <div :class="['metric-card', driverData.latest.laneDeviation ? 'bg-red-100 border-b-4 border-red-500' : 'bg-green-100 border-b-4 border-green-500']">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-2xl font-semibold text-[--color-dark]">Current Lane Keeping</h3>
+                        <svg :class="['w-10 h-10 opacity-80', driverData.latest.laneDeviation ? 'text-red-500' : 'text-green-500']" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    </div>
+                    <p :class="['metric-value', driverData.latest.laneDeviation ? 'text-red-700' : 'text-green-700']">
+                        {{ driverData.latest.laneDeviation ? 'Deviation Detected' : 'Within Lanes' }}
+                    </p>
+                    <p class="metric-label">Status of adherence to road lanes</p>
+                </div>
+                 <div class="content-card mt-10">
+                    <h2 class="h3-card mb-6">Historical Lane Behavior & Speed Context</h2>
+                    <p class="text-base text-gray-600 mb-4">
+                        Review of past lane keeping performance, with associated speed at the time of monitoring.
+                        Each entry indicates whether a lane deviation was detected, providing a comprehensive historical view.
+                    </p>
+                    <div class="log-container">
+                        <div v-for="(item, index) in driverData.history.timestamps.slice().reverse()" :key="index" class="data-point-item" :class="{'first-item-no-border': index === 0}">
+                            <p class="label-text">
+                                Entry {{ driverData.history.timestamps.length - index }}:
+                                <span class="text-gray-700">{{ item ? new Date(item).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A' }}</span>
+                            </p>
+                            <div>
+                                <p :class="['text-sm label-text', driverData.history.laneDeviation[driverData.history.timestamps.length - 1 - index] ? 'red' : 'green']">
+                                    Deviation: <span class="value-text">{{ driverData.history.laneDeviation[driverData.history.timestamps.length - 1 - index] ? 'Yes' : 'No' }}</span>
+                                </p>
+                                <p class="text-sm label-text">
+                                    Speed: <span class="value-text">{{ driverData.history.speed[driverData.history.timestamps.length - 1 - index]?.toFixed(1) || 'N/A' }} km/h</span>
+                                </p>
+                            </div>
+                        </div>
+                        <p v-if="driverData.history.timestamps.length === 0" class="text-gray-500 italic p-4 text-center">No lane behavior data available.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-12 pt-8 border-t border-gray-200 text-gray-500">
+            <p>&copy; 2025 Driver Monitoring System. All Rights Reserved.</p>
+            <p class="text-xs text-gray-400 mt-2">Data simulated for demonstration purposes. Real-world implementation will integrate with advanced computer vision models.</p>
+        </footer>
+
+    </div>
+
+    <!-- Message Box for user feedback -->
+    <div id="messageBox" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg z-50 text-white transition-transform duration-300 ease-out" style="transform: translateY(100%);">
+        <span id="messageText"></span>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Global variables provided by the Canvas environment for Firebase configuration
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Placeholder Firebase config for local development if not in Canvas environment
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-driver-monitor-app';
+
+        // Initialize Firebase services
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Helper function for displaying ephemeral messages to the user (instead of alert/confirm)
+        const showMessageBox = (message, type = 'info') => {
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            if (messageBox && messageText) {
+                messageText.textContent = message;
+                // Apply dynamic classes based on message type
+                let bgColorClass = 'bg-blue-500';
+                if (type === 'error') bgColorClass = 'bg-red-500';
+                else if (type === 'success') bgColorClass = 'bg-green-500';
+
+                messageBox.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg z-50 text-white transition-transform duration-300 ease-out ${bgColorClass} transform translate-y-0`;
+                messageBox.style.display = 'block'; // Make visible
+
+                // Hide after 3 seconds with a slide-out animation
+                setTimeout(() => {
+                    messageBox.style.transform = 'translateY(100%)';
+                    setTimeout(() => messageBox.style.display = 'none', 300); // Fully hide after transition
+                }, 3000);
+            }
+        };
+
+        // Destructure Vue 3 reactivity and lifecycle methods
+        const { createApp, ref, onMounted, reactive, watch, nextTick } = Vue;
+
+        // Define chartColors based on the infographic's palette
+        const chartColors = {
+            primary: '#07575B',
+            secondary: '#66A5AD',
+            accent: '#C4DFE6',
+            dark: '#003B46',
+            light: '#E4F1F3',
+            highlight: '#FFA630',
+            red: '#EF4444', /* Tailwind red-500 */
+            green: '#22C55E' /* Tailwind green-500 */
+        };
+
+        const createChartConfig = (type, data, options = {}) => {
+            const baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: chartColors.dark,
+                            font: {
+                                family: "'Poppins', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(0, 59, 70, 0.9)',
+                        titleFont: {
+                            family: "'Poppins', sans-serif",
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            family: "'Poppins', sans-serif",
+                            size: 12
+                        },
+                        callbacks: {
+                            title: (tooltipItems) => {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                return Array.isArray(label) ? label.join(' ') : label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: chartColors.dark,
+                            font: { family: "'Poppins', sans-serif" }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: chartColors.dark,
+                            font: { family: "'Poppins', sans-serif" }
+                        },
+                        grid: {
+                            color: '#e0e0e0'
+                        }
+                    }
+                }
+            };
+
+            if (type === 'pie' || type === 'doughnut') {
+                delete baseOptions.scales;
+            }
+
+            return {
+                type: type,
+                data: data,
+                options: { ...baseOptions, ...options }
+            };
+        };
+
+        createApp({
+            setup() {
+                const activeTab = ref('overview'); // Reactive state for the currently active tab
+                const driverData = reactive({ // Reactive object to hold all driver metrics
+                    latest: {
+                        timestamp: 'N/A',
+                        speed: 0,
+                        acceleration: 0,
+                        braking: 0,
+                        laneDeviation: false,
+                        followingDistance: 'N/A',
+                        objectsDetected: 0,
+                        driverIndex: 100 // Initialize with perfect score
+                    },
+                    history: { // Arrays to store historical data for charts/lists
+                        speed: [],
+                        acceleration: [],
+                        braking: [],
+                        laneDeviation: [], // Boolean history for lane deviation
+                        timestamps: [], // Timestamps for history (actual Date objects or millis)
+                        driverIndex: []
+                    }
+                });
+                const userId = ref('Loading...'); // Reactive state to display current user ID
+                let speedChartInstance = null; // Variable to hold Chart.js instance for speed
+                let driverIndexChartInstance = null; // Variable to hold Chart.js instance for driver index
+
+                // Define available tabs
+                const tabs = [
+                    { id: 'overview', name: 'Overview' },
+                    { id: 'speed', name: 'Speed Analysis' },
+                    { id: 'acceleration', name: 'Acceleration & Braking' },
+                    { id: 'lane_behavior', name: 'Lane Behavior' }
+                ];
+
+                // Function to switch between tabs
+                const switchTab = (tabId) => {
+                    activeTab.value = tabId;
+                    // Use nextTick to ensure DOM updates before rendering charts
+                    nextTick(() => {
+                        if (tabId === 'speed') {
+                            renderSpeedChart();
+                        } else if (tabId === 'overview') {
+                            renderDriverIndexChart();
+                        }
+                        // Other tabs don't have charts that need immediate re-rendering after switch
+                    });
+                };
+
+                // Function to calculate the Driver Behavior Index
+                const calculateDriverIndex = (data) => {
+                    // This is a simplified example for simulation. Your actual logic would be derived from model outputs.
+                    let score = 100; // Start with a perfect score
+
+                    // Define penalty weights and thresholds
+                    const harshBrakingThreshold = 0.8; // G-force
+                    const harshAccelerationThreshold = 0.7; // G-force
+                    const speedingThreshold = 90; // km/h
+                    const lowFollowingDistanceThreshold = 15; // meters
+
+                    // Apply penalties based on latest data
+                    if (data.braking > harshBrakingThreshold) {
+                        score -= 5 * (data.braking - harshBrakingThreshold); // Linear penalty based on how much it exceeds threshold
+                    }
+                    if (data.acceleration > harshAccelerationThreshold) {
+                        score -= 3 * (data.acceleration - harshAccelerationThreshold);
+                    }
+                    if (data.laneDeviation) {
+                        score -= 10; // A fixed penalty for any detected lane deviation
+                    }
+                    if (data.followingDistance !== 'N/A' && data.followingDistance < lowFollowingDistanceThreshold) {
+                        score -= 8 * (1 - (data.followingDistance / lowFollowingDistanceThreshold)); // Penalty increases as distance decreases
+                    }
+                    if (data.speed > speedingThreshold) {
+                        score -= 2 * ((data.speed - speedingThreshold) / 10); // Penalty for every 10 km/h over threshold
+                    }
+
+                    // Ensure score is within valid range [0, 100]
+                    return Math.max(0, Math.min(100, Math.round(score)));
+                };
+
+                // Function to render or update the Speed Chart
+                const renderSpeedChart = () => {
+                    if (speedChartInstance) {
+                        speedChartInstance.destroy(); // Destroy previous instance to prevent memory leaks and re-render cleanly
+                    }
+                    const ctx = document.getElementById('speedChartCanvas');
+                    if (!ctx) {
+                        console.warn("Speed chart canvas not found.");
+                        return; // Exit if canvas element isn't available
+                    }
+
+                    const labels = driverData.history.timestamps.map((ts) => {
+                        const date = new Date(ts);
+                        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    });
+                    const dataPoints = driverData.history.speed;
+
+                    speedChartInstance = new Chart(ctx, createChartConfig('line', {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Speed (km/h)',
+                            data: dataPoints,
+                            borderColor: chartColors.highlight, /* From infographic */
+                            backgroundColor: 'rgba(255, 166, 48, 0.2)', /* Lighter highlight */
+                            tension: 0.4, /* Smoothen the line, from infographic */
+                            fill: true,
+                            pointRadius: 3
+                        }]
+                    }, {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Speed (km/h)',
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                ticks: {
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                grid: {
+                                    color: '#e0e0e0'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time',
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                ticks: {
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                }
+                            },
+                            title: {
+                                display: false, /* Title handled by H3 above chart */
+                            }
+                        }
+                    }));
+                };
+
+                // Function to render or update the Driver Index Chart
+                const renderDriverIndexChart = () => {
+                    if (driverIndexChartInstance) {
+                        driverIndexChartInstance.destroy(); // Destroy previous instance
+                    }
+                    const ctx = document.getElementById('driverIndexChartCanvas');
+                    if (!ctx) {
+                        console.warn("Driver Index chart canvas not found.");
+                        return; // Exit if canvas element isn't available
+                    }
+
+                    const labels = driverData.history.timestamps.map((ts) => {
+                        const date = new Date(ts);
+                        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    });
+                    const dataPoints = driverData.history.driverIndex;
+
+                    driverIndexChartInstance = new Chart(ctx, createChartConfig('line', {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Driver Index',
+                            data: dataPoints,
+                            borderColor: chartColors.primary, /* From infographic */
+                            backgroundColor: 'rgba(7, 87, 91, 0.2)', /* Lighter primary */
+                            tension: 0.4, /* Smoothen, from infographic */
+                            fill: true,
+                            pointRadius: 3
+                        }]
+                    }, {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100, // Index is from 0-100
+                                title: {
+                                    display: true,
+                                    text: 'Driver Index Score',
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                ticks: {
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                grid: {
+                                    color: '#e0e0e0'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time',
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                ticks: {
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: chartColors.dark,
+                                    font: { family: "'Poppins', sans-serif" }
+                                }
+                            },
+                            title: {
+                                display: false, /* Title handled by H3 above chart */
+                            }
+                        }
+                    }));
+                };
+
+                // Lifecycle hook: Mounted
+                onMounted(async () => {
+                    try {
+                        let currentUser;
+                        // Authenticate user using the provided custom token or anonymously
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                            currentUser = userCredential.user;
+                        } else {
+                            const userCredential = await signInAnonymously(auth);
+                            currentUser = userCredential.user;
+                        }
+
+                        // Set the user ID for display in the UI
+                        userId.value = currentUser?.uid || crypto.randomUUID();
+                        showMessageBox(`Signed in as user: ${userId.value.substring(0, 8)}...`, 'success');
+                        console.log("Firebase initialized. User ID:", userId.value);
+
+                        // Set up Firestore Listener for real-time data
+                        // Data path: /artifacts/{appId}/public/data/driver_metrics
+                        const driverMetricsRef = collection(db, `artifacts/${appId}/public/data/driver_metrics`);
+                        // Query to get the latest 20 entries, ordered by timestamp
+                        const q = query(driverMetricsRef, orderBy("timestamp", "asc"), limit(20)); // order by asc to get latest at the end of array
+
+                        onSnapshot(q, (snapshot) => {
+                            const currentDataArray = [];
+                            // Extract data from snapshot and push to temporary array
+                            snapshot.docs.forEach(doc => {
+                                const data = doc.data();
+                                currentDataArray.push({ id: doc.id, ...data });
+                            });
+
+                            // Sort data by timestamp in ascending order to maintain chronological history for charts
+                            currentDataArray.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+
+                            // Reset history arrays before populating
+                            driverData.history.speed = [];
+                            driverData.history.acceleration = [];
+                            driverData.history.braking = [];
+                            driverData.history.laneDeviation = [];
+                            driverData.history.timestamps = [];
+                            driverData.history.driverIndex = [];
+
+
+                            if (currentDataArray.length > 0) {
+                                const latestEntry = currentDataArray[currentDataArray.length - 1]; // Get the very latest entry
+                                driverData.latest.timestamp = latestEntry.timestamp ? new Date(latestEntry.timestamp.toMillis()).toLocaleString() : 'N/A';
+                                driverData.latest.speed = latestEntry.speed || 0;
+                                driverData.latest.acceleration = latestEntry.acceleration || 0;
+                                driverData.latest.braking = latestEntry.braking || 0;
+                                driverData.latest.laneDeviation = latestEntry.laneDeviation || false;
+                                driverData.latest.followingDistance = latestEntry.followingDistance !== undefined ? latestEntry.followingDistance : 'N/A';
+                                driverData.latest.objectsDetected = latestEntry.objectsDetected || 0;
+                                // Calculate driver index for the latest entry
+                                driverData.latest.driverIndex = calculateDriverIndex(driverData.latest);
+                            }
+
+                            // Populate history arrays from currentDataArray
+                            currentDataArray.forEach(data => {
+                                driverData.history.speed.push(data.speed || 0);
+                                driverData.history.acceleration.push(data.acceleration || 0);
+                                driverData.history.braking.push(data.braking || 0);
+                                driverData.history.laneDeviation.push(data.laneDeviation || false);
+                                driverData.history.timestamps.push(data.timestamp ? data.timestamp.toMillis() : Date.now()); // Store as milliseconds
+                                // Re-calculate driver index for each historical entry
+                                driverData.history.driverIndex.push(calculateDriverIndex({
+                                    speed: data.speed || 0,
+                                    acceleration: data.acceleration || 0,
+                                    braking: data.braking || 0,
+                                    laneDeviation: data.laneDeviation || false,
+                                    followingDistance: data.followingDistance !== undefined ? data.followingDistance : 100, // Provide default if missing for history calculation
+                                    objectsDetected: data.objectsDetected || 0
+                                }));
+                            });
+
+                            console.log("Real-time data updated:", driverData.latest);
+                            // Re-render charts if their respective tabs are active
+                            if (activeTab.value === 'speed') {
+                                renderSpeedChart();
+                            } else if (activeTab.value === 'overview') {
+                                renderDriverIndexChart();
+                            }
+                        }, (error) => {
+                            showMessageBox(`Error listening to data: ${error.message}`, 'error');
+                            console.error("Error listening to Firestore:", error);
+                        });
+
+                        // Simulate adding new data for demonstration purposes
+                        setInterval(async () => {
+                            const newSpeed = Math.floor(Math.random() * 100) + 20; // 20-120 km/h
+                            const newAcceleration = parseFloat((Math.random() * 1.5).toFixed(2)); // 0-1.5 G
+                            const newBraking = parseFloat((Math.random() * 1.2).toFixed(2)); // 0-1.2 G
+                            const newLaneDeviation = Math.random() < 0.15; // 15% chance of deviation
+                            const newFollowingDistance = Math.floor(Math.random() * 50) + 5; // 5-55 meters
+                            const newObjectsDetected = Math.floor(Math.random() * 10);
+
+                            try {
+                                await addDoc(driverMetricsRef, {
+                                    speed: newSpeed,
+                                    acceleration: newAcceleration,
+                                    braking: newBraking,
+                                    laneDeviation: newLaneDeviation,
+                                    followingDistance: newFollowingDistance,
+                                    objectsDetected: newObjectsDetected,
+                                    timestamp: serverTimestamp() // Use Firestore server timestamp
+                                });
+                                // showMessageBox('New data added to Firebase!', 'info'); // Uncomment for frequent notifications
+                            } catch (e) {
+                                console.error("Error adding simulated data: ", e);
+                                showMessageBox(`Error adding simulated data: ${e.message}`, 'error');
+                            }
+                        }, 5000); // Add new data every 5 seconds for simulation
+                    } catch (error) {
+                        console.error("Critical error during Firebase initialization or authentication:", error);
+                        showMessageBox(`Authentication or initialization error: ${error.message}`, 'error');
+                        userId.value = 'Auth Failed';
+                    }
+                });
+
+                // Watch for changes in activeTab to re-render charts when necessary
+                watch(activeTab, (newTab) => {
+                    if (newTab === 'speed') {
+                        nextTick(renderSpeedChart);
+                    } else if (newTab === 'overview') {
+                        nextTick(renderDriverIndexChart);
+                    }
+                });
+
+                // Expose reactive states and methods to the template
+                return {
+                    activeTab,
+                    tabs,
+                    switchTab,
+                    driverData,
+                    userId
+                };
+            }
+        }).mount('#app'); // Mount the Vue app to the div with id 'app'
+    </script>
+</body>
+</html>
